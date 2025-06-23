@@ -1,49 +1,31 @@
+// server/playerHistory.js
 import fetch from 'node-fetch';
 
 export async function getPlayerMatchHistory(playerId) {
-  const matchesUrl = `https://omeda.city/players/${playerId}/matches.json?per_page=5`;
-  const heroesUrl = `https://omeda.city/heroes.json`;
-
-  const [matchRes, heroesRes] = await Promise.all([
-    fetch(matchesUrl),
-    fetch(heroesUrl)
-  ]);
-
+  const matchRes = await fetch(`https://api.prod.omeda.city/players/${playerId}/matches.json?per_page=10`);
   if (!matchRes.ok) {
     throw new Error(`Failed to fetch matches: ${matchRes.status}`);
   }
-  if (!heroesRes.ok) {
-    throw new Error(`Failed to fetch heroes: ${heroesRes.status}`);
-  }
+  const matchData = await matchRes.json();
 
-  const matchJson = await matchRes.json();
-  const heroJson = await heroesRes.json();
-
-  // Defensive check: ensure matches is an array
-  const matches = Array.isArray(matchJson) ? matchJson : matchJson.data ?? [];
-
-  if (!Array.isArray(matches)) {
-    console.error('Unexpected match data structure:', matchJson);
-    throw new Error('Invalid match data received from API');
-  }
-
+  const heroRes = await fetch(`https://api.prod.omeda.city/heroes.json`);
+  const heroData = await heroRes.json();
   const heroMap = {};
-  heroJson.forEach(hero => {
-    heroMap[hero.id] = {
-      name: hero.name,
-      image: hero.image_portrait
-    };
+  heroData.forEach(h => {
+    heroMap[h.id] = { name: h.name, image: h.portrait_icon_url };
   });
 
-  return matches.map(match => {
-    const hero = heroMap[match.hero_id] || { name: 'Unknown Hero', image: '' };
+  const matches = matchData.map(match => {
+    const heroId = match.hero_id;
     return {
-      date: match.started,
+      heroName: heroMap[heroId]?.name || 'Unknown Hero',
+      heroImage: heroMap[heroId]?.image || '',
       kills: match.kills,
       deaths: match.deaths,
       assists: match.assists,
-      heroName: hero.name,
-      heroImage: hero.image
+      timestamp: match.created_at
     };
   });
+
+  return matches;
 }
