@@ -11,10 +11,11 @@ form.addEventListener('submit', async (e) => {
 
   try {
     const res = await fetch(`/api/player/${playerId}/history`);
-    const matches = await res.json();
-    if (!Array.isArray(matches)) throw new Error('Invalid data');
-    renderStats(matches);
-    renderChart(matches);
+    const history = await res.json();
+    if (!Array.isArray(history)) throw new Error("Invalid data");
+
+    renderStats(history);
+    renderChart(history);
   } catch (err) {
     resultDiv.innerHTML = `<p>Error fetching stats. Please try again.</p>`;
     console.error(err);
@@ -22,27 +23,26 @@ form.addEventListener('submit', async (e) => {
 });
 
 function renderStats(matches) {
-  if (!Array.isArray(matches) || matches.length === 0) {
+  if (!matches.length) {
     resultDiv.innerHTML = `<p>No match data found for this player.</p>`;
     return;
   }
 
   const html = matches.map(match => {
-    const date = new Date(match.started_at);
+    const date = new Date(match.timestamp || match.created_at);
     const formattedDate = isNaN(date) ? 'Unknown date' : date.toLocaleString();
 
-    const hero = match.hero_codename || 'Unknown Hero';
-    const avatarUrl = `https://cdn.omeda.city/heroes/${hero.toLowerCase()}.webp`;
+    const hero = match.hero || 'Unknown Hero';
+    const avatarUrl = match.hero_image || 'https://via.placeholder.com/64x64?text=?';
 
-    const stats = match.stats || {};
-    const kills = stats.kills ?? 0;
-    const deaths = stats.deaths || 1;
-    const assists = stats.assists ?? 0;
+    const kills = match.kills ?? 0;
+    const deaths = match.deaths ?? 1;
+    const assists = match.assists ?? 0;
     const kda = ((kills + assists) / deaths).toFixed(2);
 
     return `
       <div class="match-card">
-        <img src="${avatarUrl}" alt="${hero}" class="avatar" onerror="this.src='/fallback.jpg'" />
+        <img src="${avatarUrl}" alt="${hero}" class="avatar" />
         <div>
           <h3>${hero}</h3>
           <p>Date: ${formattedDate}</p>
@@ -58,15 +58,14 @@ function renderStats(matches) {
 
 function renderChart(matches) {
   const labels = matches.map((match, i) => {
-    const date = new Date(match.started_at);
+    const date = new Date(match.timestamp || match.created_at);
     return isNaN(date) ? `Match ${i + 1}` : date.toLocaleDateString();
   });
 
   const data = matches.map(match => {
-    const stats = match.stats || {};
-    const kills = stats.kills ?? 0;
-    const deaths = stats.deaths || 1;
-    const assists = stats.assists ?? 0;
+    const kills = match.kills ?? 0;
+    const deaths = match.deaths ?? 1;
+    const assists = match.assists ?? 0;
     return ((kills + assists) / deaths).toFixed(2);
   });
 
@@ -99,3 +98,4 @@ function renderChart(matches) {
     }
   });
 }
+
