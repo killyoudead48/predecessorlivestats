@@ -3,99 +3,135 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Predecessor Stats Viewer</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0e0e10;
-      color: #fff;
-      margin: 0;
-      padding: 2rem;
-    }
-    h1 {
-      color: #e63946;
-    }
-    input, button {
-      padding: 0.5rem;
-      font-size: 1rem;
-      margin-right: 0.5rem;
-      border-radius: 4px;
-      border: none;
-    }
-    button {
-      background-color: #1d3557;
-      color: white;
-      cursor: pointer;
-    }
-    .match, .history {
-      background: #1a1a1d;
-      margin: 1rem 0;
-      padding: 1rem;
-      border-radius: 8px;
-    }
-    .match pre, .history pre {
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-  </style>
+  <title>Predecessor Player Stats</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
-  <h1>Predecessor Match Stats</h1>
+<body class="bg-gray-100 text-gray-800 min-h-screen p-4">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6 text-center">🔍 Predecessor Player Stats</h1>
 
-  <div>
-    <input id="playerId" type="text" placeholder="Enter Player ID (UUID)" />
-    <button onclick="loadHistory()">Search</button>
+    <div class="mb-6">
+      <label for="playerId" class="block text-sm font-medium text-gray-700">Enter Player ID:</label>
+      <div class="flex gap-2 mt-2">
+        <input id="playerId" type="text" placeholder="Player UUID..." class="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring focus:border-blue-300"/>
+        <button onclick="loadHistory()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Search</button>
+      </div>
+    </div>
+
+    <div id="error" class="text-red-600 mb-4 hidden"></div>
+
+    <h2 class="text-2xl font-semibold mb-4">Match History</h2>
+    <div id="matchHistory" class="space-y-4"></div>
+
+    <h2 class="text-2xl font-semibold mt-10 mb-4">📊 KDA Over Time</h2>
+    <canvas id="kdaChart" height="100"></canvas>
   </div>
 
-  <h2>Live Matches</h2>
-  <div id="liveMatches"></div>
-
-  <h2>Player History</h2>
-  <div id="playerHistory"></div>
-
   <script>
-    const liveMatchesDiv = document.getElementById('liveMatches');
-    const playerHistoryDiv = document.getElementById('playerHistory');
-
-    // Connect to WebSocket for live match updates
-    const ws = new WebSocket(`wss://${window.location.host}`);
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'match') {
-        const div = document.createElement('div');
-        div.className = 'match';
-        div.innerHTML = `<strong>Match ID:</strong> ${data.match.id}<br/><pre>${JSON.stringify(data.match, null, 2)}</pre>`;
-        liveMatchesDiv.prepend(div);
-        if (liveMatchesDiv.childElementCount > 5) {
-          liveMatchesDiv.removeChild(liveMatchesDiv.lastChild);
-        }
-      }
-    };
+    const errorBox = document.getElementById('error');
+    let kdaChart;
 
     async function loadHistory() {
       const playerId = document.getElementById('playerId').value.trim();
       if (!playerId) return;
 
-      try {
-        const res = await fetch(`/api/player/${playerId}/history`);
-        const history = await res.json();
+      localStorage.setItem('playerId', playerId);
+      const res = await fetch(`/api/player/${playerId}/history`);
+      const container = document.getElementById('matchHistory');
+      container.innerHTML = '';
+      errorBox.classList.add('hidden');
 
-        playerHistoryDiv.innerHTML = '';
-        if (history && Array.isArray(history)) {
-          history.forEach(match => {
-            const div = document.createElement('div');
-            div.className = 'history';
-            div.innerHTML = `<strong>Match ID:</strong> ${match.id}<br/><pre>${JSON.stringify(match, null, 2)}</pre>`;
-            playerHistoryDiv.appendChild(div);
-          });
-        } else {
-          playerHistoryDiv.innerHTML = '<p>No history found or API error.</p>';
-        }
-      } catch (err) {
-        console.error(err);
-        playerHistoryDiv.innerHTML = `<p style="color:red;">Error fetching history</p>`;
+      if (!res.ok) {
+        errorBox.textContent = 'Player not found or server error.';
+        errorBox.classList.remove('hidden');
+        return;
       }
+
+      const matches = await res.json();
+      if (!matches.length) {
+        container.innerHTML = '<p class="text-gray-500">No matches found for this player.</p>';
+        return;
+      }
+
+      const kdaData = [];
+      const labels = [];
+
+      matches.forEach(match => {
+        const div = document.createElement('div');
+        div.className = "bg-white p-4 rounded shadow flex gap-4";
+
+        const heroIconUrl = match.hero_icon || `https://cdn.omeda.city/heroes/${match.hero_id || 'unknown'}.webp`;
+
+        div.innerHTML = `
+          <img src="${heroIconUrl}" alt="${match.hero_name}" class="w-16 h-16 rounded-full object-cover border"/>
+          <div class="flex-1">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="font-semibold text-lg">${match.hero_name || 'Unknown Hero'}</h3>
+              <span class="${match.victory ? 'text-green-600' : 'text-red-600'} font-bold">
+                ${match.victory ? 'Victory' : 'Defeat'}
+              </span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-sm text-gray-700">
+              <div><strong>K/D/A:</strong> ${match.kills}/${match.deaths}/${match.assists}</div>
+              <div><strong>Gold:</strong> ${match.gold}</div>
+              <div><strong>Damage:</strong> ${match.damage_done}</div>
+              <div><strong>Date:</strong> ${new Date(match.created_at).toLocaleDateString()}</div>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(div);
+
+        // prepare chart data
+        const kda = (match.kills + match.assists) / Math.max(match.deaths, 1);
+        kdaData.push(kda.toFixed(2));
+        labels.push(new Date(match.created_at).toLocaleDateString());
+      });
+
+      // Render KDA Chart
+      const ctx = document.getElementById('kdaChart').getContext('2d');
+      if (kdaChart) kdaChart.destroy();
+      kdaChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'KDA Ratio',
+            data: kdaData,
+            borderColor: 'rgba(59, 130, 246, 1)',
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: true },
+            tooltip: { mode: 'index', intersect: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'KDA Ratio' }
+            },
+            x: {
+              title: { display: true, text: 'Match Date' }
+            }
+          }
+        }
+      });
     }
+
+    // Load from localStorage on load
+    window.onload = () => {
+      const savedId = localStorage.getItem('playerId');
+      if (savedId) {
+        document.getElementById('playerId').value = savedId;
+        loadHistory();
+      }
+    };
   </script>
 </body>
 </html>
