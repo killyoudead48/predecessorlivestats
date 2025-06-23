@@ -12,15 +12,15 @@ form.addEventListener('submit', async (e) => {
   try {
     const res = await fetch(`/api/player/${playerId}/history`);
     const history = await res.json();
-    renderStats(history, playerId);
-    renderChart(history, playerId);
+    renderStats(history);
+    renderChart(history);
   } catch (err) {
     resultDiv.innerHTML = `<p>Error fetching stats. Please try again.</p>`;
     console.error(err);
   }
 });
 
-function renderStats(matches, playerId) {
+function renderStats(matches) {
   if (!Array.isArray(matches) || matches.length === 0) {
     resultDiv.innerHTML = `<p>No match data found for this player.</p>`;
     return;
@@ -30,21 +30,18 @@ function renderStats(matches, playerId) {
     const date = new Date(match.timestamp || match.created_at || match.date);
     const formattedDate = isNaN(date) ? 'Unknown date' : date.toLocaleString();
 
-    const player = match.players.find(p => p.player_id === playerId);
-    if (!player) return '<p>Match data missing for player.</p>';
+    const hero = match.hero_name || match.hero || match.character || 'Unknown Hero';
+    const heroSlug = hero.toLowerCase().replace(/\s+/g, '');
+    const avatarUrl = `https://cdn.omeda.city/heroes/${heroSlug}.webp`; // Adjust to actual image CDN path
 
-    const hero = player.hero || player.character || 'Unknown';
-    const heroSlug = hero.toLowerCase().replace(/\s+/g, '-');
-    const avatarUrl = `https://cdn.omeda.city/heroes/${heroSlug}.webp`;
-
-    const kills = player.kills ?? 0;
-    const deaths = player.deaths ?? 1; // Prevent divide by 0
-    const assists = player.assists ?? 0;
-    const kda = ((kills + assists) / deaths).toFixed(2);
+    const kills = Number(match.kills) || 0;
+    const deaths = Number(match.deaths) || 0;
+    const assists = Number(match.assists) || 0;
+    const kda = deaths === 0 ? kills + assists : ((kills + assists) / deaths).toFixed(2);
 
     return `
       <div class="match-card">
-        <img src="${avatarUrl}" alt="${hero}" class="avatar" onerror="this.onerror=null;this.src='fallback.png';" />
+        <img src="${avatarUrl}" alt="${hero}" class="avatar" onerror="this.src='https://cdn.omeda.city/heroes/default.webp'" />
         <div>
           <h3>${hero}</h3>
           <p>Date: ${formattedDate}</p>
@@ -58,26 +55,21 @@ function renderStats(matches, playerId) {
   resultDiv.innerHTML = html;
 }
 
-function renderChart(matches, playerId) {
-  const labels = [];
-  const data = [];
-
-  matches.forEach((match, i) => {
+function renderChart(matches) {
+  const labels = matches.map((match, i) => {
     const date = new Date(match.timestamp || match.created_at || match.date);
-    labels.push(isNaN(date) ? `Match ${i + 1}` : date.toLocaleDateString());
-
-    const player = match.players.find(p => p.player_id === playerId);
-    if (player) {
-      const kills = player.kills ?? 0;
-      const deaths = player.deaths ?? 1;
-      const assists = player.assists ?? 0;
-      data.push(((kills + assists) / deaths).toFixed(2));
-    } else {
-      data.push(null);
-    }
+    return isNaN(date) ? `Match ${i + 1}` : date.toLocaleDateString();
   });
 
-  if (kdaChart) kdaChart.destroy();
+  const data = matches.map(match => {
+    const kills = Number(match.kills) || 0;
+    const deaths = Number(match.deaths) || 0;
+    const assists = Number(match.assists) || 0;
+    const kda = deaths === 0 ? kills + assists : ((kills + assists) / deaths).toFixed(2);
+    return kda;
+  });
+
+  if (kdaChart) kdaChart.destroy(); // Clear previous chart
 
   kdaChart = new Chart(chartCanvas, {
     type: 'line',
