@@ -10,5 +10,9 @@ export async function getPlayerMatchHistory(playerId, limit = 5) {
   } catch (err) {
     console.error(`Error fetching player history:`, err);
     return [];
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error ('Failed to fetch matches: ${response.status}');
+      return await response.json();
   }
 }
