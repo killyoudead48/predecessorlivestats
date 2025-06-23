@@ -1,87 +1,96 @@
-/* public/styles.css */
-
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #1a1a1a;
-  color: #f0f0f0;
+  background-color: #121212;
+  color: #ffffff;
   margin: 0;
   padding: 0;
-  line-height: 1.6;
-}
-
-header {
-  background-color: #111;
-  padding: 1em;
-  text-align: center;
-  border-bottom: 2px solid #333;
-}
-
-header h1 {
-  margin: 0;
-  font-size: 2rem;
 }
 
 .container {
   max-width: 800px;
-  margin: 2em auto;
-  padding: 1em;
-  background-color: #2a2a2a;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  margin: 2rem auto;
+  padding: 1rem;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: #ffffff;
 }
 
 form {
-  display: flex;
-  gap: 0.5em;
-  margin-bottom: 1em;
+  margin-bottom: 2rem;
 }
 
 input[type="text"] {
-  flex: 1;
-  padding: 0.5em;
-  border-radius: 4px;
-  border: 1px solid #444;
-  background-color: #333;
-  color: #f0f0f0;
+  padding: 0.5rem;
+  width: 60%;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: none;
+  background-color: #1e1e1e;
+  color: #ffffff;
+  outline: none;
 }
 
 button {
-  padding: 0.5em 1em;
-  background-color: #007bff;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  background-color: #1e88e5;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
+  margin-left: 0.5rem;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: #1565c0;
+}
+
+#results {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem;
 }
 
 .match-card {
-  background-color: #1e1e1e;
-  border: 1px solid #444;
-  padding: 1em;
-  border-radius: 6px;
-  margin-bottom: 1em;
-}
-
-.match-header {
   display: flex;
   align-items: center;
-  gap: 1em;
+  background: #1f1f1f;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  gap: 1rem;
+  text-align: left;
 }
 
-.match-header img {
-  width: 48px;
-  height: 48px;
+.match-card img.avatar {
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid #444;
 }
 
-.chart-container {
-  margin-top: 2em;
-  background-color: #222;
-  padding: 1em;
-  border-radius: 6px;
+.match-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+  color: #90caf9;
+}
+
+.match-card p {
+  margin: 0.2rem 0;
+  font-size: 0.95rem;
+  color: #ddd;
+}
+
+canvas {
+  background: #ffffff;
+  border-radius: 10px;
+  margin-top: 1.5rem;
+  padding: 1rem;
 }
