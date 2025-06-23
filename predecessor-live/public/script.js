@@ -27,23 +27,18 @@ function renderStats(matches) {
   }
 
   const html = matches.map(match => {
-    const heroRaw = match.hero || match.character || 'Unknown Hero';
-    const hero = heroRaw.charAt(0).toUpperCase() + heroRaw.slice(1);
-    const avatarUrl = `https://cdn.omeda.city/heroes/${hero.toLowerCase().replace(/ /g, '-')}.webp`;
-
+    const date = new Date(match.timestamp);
+    const formattedDate = isNaN(date) ? 'Unknown date' : date.toLocaleString();
     const kills = match.kills ?? 0;
-    const deaths = Math.max(match.deaths ?? 1, 1);
+    const deaths = match.deaths ?? 1;
     const assists = match.assists ?? 0;
     const kda = ((kills + assists) / deaths).toFixed(2);
 
-    const date = new Date(match.timestamp || match.created_at || match.date);
-    const formattedDate = isNaN(date) ? 'Unknown date' : date.toLocaleString();
-
     return `
       <div class="match-card">
-        <img src="${avatarUrl}" alt="${hero}" class="avatar" />
+        <img src="${match.avatar}" alt="${match.hero}" class="avatar" />
         <div>
-          <h3>${hero}</h3>
+          <h3>${match.hero}</h3>
           <p>Date: ${formattedDate}</p>
           <p>K/D/A: ${kills}/${deaths}/${assists}</p>
           <p>KDA Ratio: ${kda}</p>
@@ -57,13 +52,13 @@ function renderStats(matches) {
 
 function renderChart(matches) {
   const labels = matches.map((match, i) => {
-    const date = new Date(match.timestamp || match.created_at || match.date);
+    const date = new Date(match.timestamp);
     return isNaN(date) ? `Match ${i + 1}` : date.toLocaleDateString();
   });
 
   const data = matches.map(match => {
     const kills = match.kills ?? 0;
-    const deaths = Math.max(match.deaths ?? 1, 1);
+    const deaths = match.deaths ?? 1;
     const assists = match.assists ?? 0;
     return ((kills + assists) / deaths).toFixed(2);
   });
