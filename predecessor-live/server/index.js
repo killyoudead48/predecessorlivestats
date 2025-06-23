@@ -2,6 +2,7 @@ import express from 'express';
 import http from 'http';
 import { WebSocketServer } from 'ws';
 import fetch from 'node-fetch';
+import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getPlayerMatchHistory } from './playerHistory.js';
@@ -10,6 +11,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.use(cors());
+app.use(express.static('public'));
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 let clients = [];
@@ -45,6 +48,12 @@ async function pollMatches() {
 pollMatches();
 
 app.get('/api/player/:id/history', async (req, res) => {
+  try{
+    const data = await getPlayerMatchHistory (req.params.id, 5)
+    res.json(data);
+  } catch (err){
+    console.error(err);
+    res.status(500).json({ error: 'failed to fetch player history' });
   const history = await getPlayerMatchHistory(req.params.id, 5);
   res.json(history);
 });
