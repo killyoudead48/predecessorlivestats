@@ -1,59 +1,52 @@
+// server/playerHistory.js
 import fetch from 'node-fetch';
-
-const BASE_URL = 'https://api.prod.omeda.city/v1';
 
 export async function getPlayerMatchHistory(playerId) {
   try {
-    // Step 1: Get list of match IDs for the player
-   const matchesRes = await fetch(`https://api.prod.thepredecessor.com/v1/matches/get-matches-by-player?player_id=${playerId}&limit=10`);
-    if (!matchRes.ok) throw new Error(`Failed to fetch matches: ${matchRes.status}`);
-    const matchData = await matchRes.json();
+    // ✅ Corrected API domain
+    const matchesRes = await fetch(`https://api.prod.thepredecessor.com/v1/matches/get-matches-by-player?player_id=${playerId}&limit=10`);
 
-    const matches = matchData.matches;
-    if (!Array.isArray(matches)) throw new Error('Invalid match list');
+    if (!matchesRes.ok) {
+      throw new Error(`Failed to fetch matches: ${matchesRes.status}`);
+    }
 
-    // Step 2: Get full match details for each match
-    const matchDetails = await Promise.all(
-      matches.map(async (match) => {
-        const res = await fetch(`https://api.prod.thepredecessor.com/v1/matches/get-matches-by-player?player_id=${playerId}&limit=10'}/matches/get?id=${match.match_id}`);
-        if (!res.ok) throw new Error(`Failed to fetch match details for ${match.match_id}`);
-        return res.json();
-      })
-    );
+    const matchData = await matchesRes.json();
+    const matches = matchData.data;
 
-    // Step 3: Get hero metadata (names, images)
-    const heroRes = await fetch(`${BASE_URL}/heroes/list`);
-    const heroData = await heroRes.json();
-    const heroMap = {};
-    heroData.heroes.forEach(hero => {
-      heroMap[hero.id] = {
-        name: hero.name,
-        image: hero.image_url
-      };
-    });
+    // Fetch hero list once
+    const heroesRes = await fetch('https://api.prod.thepredecessor.com/v1/heroes/list');
+    if (!heroesRes.ok) {
+      throw new Error('Failed to fetch hero list');
+    }
+    const heroData = await heroesRes.json();
+    const heroMap = new Map(heroData.data.map(h => [h.hero_id, h]));
 
-    // Step 4: Extract and format relevant player stats per match
-    const playerMatches = matchDetails.map((match) => {
-      const playerStats = match.match.teams
-        .flatMap(team => team.players)
+    // Format match data
+    const formatted = matches.map(match => {
+      const player = match.teams.flatMap(team => team.players)
         .find(p => p.player_id === playerId);
 
-      const hero = heroMap[playerStats.hero_id] || { name: 'Unknown', image: '' };
+      const hero = heroMap.get(player.hero_id);
+      const kda = `${player.kills}/${player.deaths}/${player.assists}`;
+      const result = player.winner ? 'Win' : 'Loss';
 
       return {
-        matchId: match.match.id,
-        heroId: playerStats.hero_id,
-        heroName: hero.name,
-        heroImage: hero.image,
-        kills: playerStats.kills,
-        deaths: playerStats.deaths,
-        assists: playerStats.assists
+        matchId: match.match_id,
+        heroName: hero?.name || 'Unknown',
+        heroImage: hero?.icon_url || '',
+        kills: player.kills,
+        deaths: player.deaths,
+        assists: player.assists,
+        kda,
+        result,
+        date: new Date(match.started_at).toLocaleString(),
       };
     });
 
-    return playerMatches;
-  } catch (err) {
-    console.error('getPlayerMatchHistory error:', err);
-    throw err;
+    return formatted;
+  } catch (error) {
+    console.error('Error fetching player match history:', error);
+    throw error;
   }
 }
+
