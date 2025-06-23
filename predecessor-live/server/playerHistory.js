@@ -1,5 +1,4 @@
 // server/playerHistory.js
-import fetch from 'node-fetch';
 
 export async function getPlayerMatchHistory(playerId) {
   try {
