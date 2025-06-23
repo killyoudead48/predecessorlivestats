@@ -1,37 +1,29 @@
-// ==== server/playerHistory.js ====
+// server/playerHistory.js
 import fetch from 'node-fetch';
 
-const HEROES_API = 'https://omeda.city/heroes.json';
-const MATCH_HISTORY_API = 'https://omeda.city/players';
-
-let heroMapCache = {};
-
-async function getHeroMap() {
-  if (Object.keys(heroMapCache).length > 0) return heroMapCache;
-  const res = await fetch(HEROES_API);
-  const data = await res.json();
-  for (const hero of data) {
-    heroMapCache[hero.id] = {
-      name: hero.name,
-      avatar: hero.portrait_icon || hero.icon || '',
-    };
-  }
-  return heroMapCache;
-}
-
+/**
+ * Fetches the recent match history for a player by player ID.
+ * @param {string} playerId - The UUID of the player.
+ * @returns {Promise<Array>} - Returns an array of match objects.
+ */
 export default async function getPlayerMatchHistory(playerId) {
-  const res = await fetch(`${MATCH_HISTORY_API}/${playerId}/matches.json?per_page=10`);
-  const matches = await res.json();
-  if (!Array.isArray(matches)) throw new Error('Invalid match data');
+  const url = `https://omeda.city/players/${playerId}/matches.json?per_page=10`;
 
-  const heroMap = await getHeroMap();
+  try {
+    const response = await fetch(url);
 
-  return matches.map(match => {
-    const heroData = heroMap[match.hero_id] || { name: 'Unknown Hero', avatar: '' };
-    return {
-      ...match,
-      heroName: heroData.name,
-      avatar: heroData.avatar,
-    };
-  });
+    if (!response.ok) {
+      console.error(`Error fetching player matches: ${response.statusText}`);
+      return [];
+    }
+
+    const matchData = await response.json();
+
+    // Optional: simplify data or filter fields as needed
+    return Array.isArray(matchData) ? matchData : [];
+  } catch (error) {
+    console.error('Failed to fetch player match history:', error.message);
+    return [];
+  }
 }
+
