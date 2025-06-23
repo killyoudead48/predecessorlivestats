@@ -11,9 +11,10 @@ form.addEventListener('submit', async (e) => {
 
   try {
     const res = await fetch(`/api/player/${playerId}/history`);
-    const history = await res.json();
-    renderStats(history);
-    renderChart(history);
+    const matches = await res.json();
+    if (!Array.isArray(matches)) throw new Error('Invalid data');
+    renderStats(matches);
+    renderChart(matches);
   } catch (err) {
     resultDiv.innerHTML = `<p>Error fetching stats. Please try again.</p>`;
     console.error(err);
@@ -27,18 +28,23 @@ function renderStats(matches) {
   }
 
   const html = matches.map(match => {
-    const date = new Date(match.timestamp);
+    const date = new Date(match.started_at);
     const formattedDate = isNaN(date) ? 'Unknown date' : date.toLocaleString();
-    const kills = match.kills ?? 0;
-    const deaths = match.deaths ?? 1;
-    const assists = match.assists ?? 0;
+
+    const hero = match.hero_codename || 'Unknown Hero';
+    const avatarUrl = `https://cdn.omeda.city/heroes/${hero.toLowerCase()}.webp`;
+
+    const stats = match.stats || {};
+    const kills = stats.kills ?? 0;
+    const deaths = stats.deaths || 1;
+    const assists = stats.assists ?? 0;
     const kda = ((kills + assists) / deaths).toFixed(2);
 
     return `
       <div class="match-card">
-        <img src="${match.avatar}" alt="${match.hero}" class="avatar" />
+        <img src="${avatarUrl}" alt="${hero}" class="avatar" onerror="this.src='/fallback.jpg'" />
         <div>
-          <h3>${match.hero}</h3>
+          <h3>${hero}</h3>
           <p>Date: ${formattedDate}</p>
           <p>K/D/A: ${kills}/${deaths}/${assists}</p>
           <p>KDA Ratio: ${kda}</p>
@@ -52,14 +58,15 @@ function renderStats(matches) {
 
 function renderChart(matches) {
   const labels = matches.map((match, i) => {
-    const date = new Date(match.timestamp);
+    const date = new Date(match.started_at);
     return isNaN(date) ? `Match ${i + 1}` : date.toLocaleDateString();
   });
 
   const data = matches.map(match => {
-    const kills = match.kills ?? 0;
-    const deaths = match.deaths ?? 1;
-    const assists = match.assists ?? 0;
+    const stats = match.stats || {};
+    const kills = stats.kills ?? 0;
+    const deaths = stats.deaths || 1;
+    const assists = stats.assists ?? 0;
     return ((kills + assists) / deaths).toFixed(2);
   });
 
