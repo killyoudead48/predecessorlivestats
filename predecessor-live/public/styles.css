@@ -1,58 +1,61 @@
+/* public/styles.css */
 body {
   font-family: Arial, sans-serif;
-  background: #111;
-  color: #eee;
-  padding: 20px;
-  max-width: 900px;
-  margin: auto;
+  background: #121212;
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
 }
 
-h1 {
-  text-align: center;
-  margin-bottom: 30px;
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: #1e1e1e;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
 form {
   display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
-input {
-  padding: 10px;
-  border-radius: 6px;
+input, button {
+  padding: 0.5rem;
+  font-size: 1rem;
   border: none;
-  font-size: 16px;
-  width: 300px;
+  border-radius: 4px;
 }
 
 button {
-  padding: 10px 20px;
-  background: #4bc0c0;
+  background-color: #007BFF;
   color: #fff;
-  border: none;
-  border-radius: 6px;
   cursor: pointer;
 }
 
-.match-card {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  background: #222;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 8px;
+button:hover {
+  background-color: #0056b3;
 }
 
-.avatar {
+.match {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #444;
+  padding-bottom: 1rem;
+}
+
+.hero-img {
   width: 64px;
   height: 64px;
-  border-radius: 8px;
-  object-fit: cover;
+  margin-right: 1rem;
+  border-radius: 4px;
 }
 
 canvas {
-  margin-top: 30px;
+  margin-top: 2rem;
+  background: #ffffff;
+  border-radius: 8px;
 }
