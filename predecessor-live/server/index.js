@@ -56,7 +56,7 @@ app.get('/api/player/:id/history', async (req, res) => {
     res.status(500).json({ error: 'failed to fetch player history' });
   const history = await getPlayerMatchHistory(req.params.id, 5);
   res.json(history);
-});
+};
 
 app.use(express.static(path.join(__dirname, '../public')));
 
