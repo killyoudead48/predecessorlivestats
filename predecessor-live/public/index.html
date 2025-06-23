@@ -15,5 +15,33 @@
     <button onclick="searchPlayer()" class="bg-blue-600 hover:bg-blue-800 px-4 py-2 rounded">Search</button>
     <div id="matches" class="mt-6 space-y-4"></div>
   </div>
+  <form id="playerSearch">
+  <input type="text" id="playerId" placeholder="Enter Player ID" />
+  <button type="submit">Search</button>
+</form>
+
+<div id="matchHistory"></div>
+
+<script>
+document.getElementById('playerSearch').addEventListener('submit', async e => {
+  e.preventDefault();
+  const id = document.getElementById('playerId').value;
+  const res = await fetch(`/api/player/${id}/history`);
+  const matches = await res.json();
+  
+  const output = matches.map(m => `
+    <div style="margin:1em 0;padding:1em;border:1px solid #444;background:#111;color:#eee">
+      <strong>Hero:</strong> ${m.player_stats?.hero || 'Unknown'}<br>
+      <strong>K/D/A:</strong> ${m.player_stats?.kills}/${m.player_stats?.deaths}/${m.player_stats?.assists}<br>
+      <strong>Team:</strong> ${m.player_stats?.team}, <strong>Result:</strong> ${m.player_stats?.result}<br>
+      <strong>Started:</strong> ${new Date(m.started_at).toLocaleString()}<br>
+      <strong>Duration:</strong> ${(m.duration/60).toFixed(1)} minutes
+    </div>
+  `).join('');
+  
+  document.getElementById('matchHistory').innerHTML = output || 'No match data found.';
+});
+</script>
+
 </body>
 </html>
