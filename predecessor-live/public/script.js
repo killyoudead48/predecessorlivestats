@@ -1,111 +1,88 @@
-const form = document.getElementById('playerForm');
-const input = document.getElementById('playerId');
-const resultDiv = document.getElementById('results');
-const chartCanvas = document.getElementById('kdaChart').getContext('2d');
-let kdaChart;
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('playerForm');
+  const input = document.getElementById('playerId');
+  const resultDiv = document.getElementById('results');
+  const chartCanvas = document.getElementById('kdaChart').getContext('2d');
+  let kdaChart;
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const playerName = input.value.trim();
-  if (!playerName) return;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const playerId = input.value.trim();
+    if (!playerId) return;
 
-  resultDiv.innerHTML = `<p>Loading data...</p>`;
+    try {
+      const res = await fetch(`/api/player/${playerId}/history`);
+      const matches = await res.json();
 
-  try {
-    const idRes = await fetch(`/api/player/name/${playerName}`);
-    const idData = await idRes.json();
+      if (!Array.isArray(matches) || matches.length === 0) {
+        resultDiv.innerHTML = `<p>No match data found for this player.</p>`;
+        return;
+      }
 
-    if (!idData || !idData.id) {
-      resultDiv.innerHTML = `<p>Player not found.</p>`;
-      return;
+      renderStats(matches);
+      renderChart(matches);
+    } catch (err) {
+      resultDiv.innerHTML = `<p>Error fetching stats. Please try again.</p>`;
+      console.error(err);
     }
+  });
 
-    const playerId = idData.id;
+  function renderStats(matches) {
+    resultDiv.innerHTML = matches.map(match => {
+      const date = new Date(match.date);
+      const formattedDate = isNaN(date) ? 'Unknown' : date.toLocaleString();
+      const heroImage = `https://cdn.omeda.city/heroes/${match.heroName.toLowerCase()}.webp`;
+      const kdaRatio = ((match.kills + match.assists) / Math.max(1, match.deaths)).toFixed(2);
 
-    const historyRes = await fetch(`/api/player/${playerId}/history`);
-    const matches = await historyRes.json();
-
-    if (!Array.isArray(matches) || matches.length === 0) {
-      resultDiv.innerHTML = `<p>No match data found for this player.</p>`;
-      return;
-    }
-
-    renderStats(matches);
-    renderChart(matches);
-  } catch (err) {
-    console.error(err);
-    resultDiv.innerHTML = `<p>Error fetching stats. Please try again later.</p>`;
-  }
-});
-
-function renderStats(matches) {
-  const html = matches.map(match => {
-    const date = new Date(match.timestamp || match.created_at);
-    const formattedDate = isNaN(date) ? 'Unknown date' : date.toLocaleString();
-
-    const heroName = match.heroName || 'Unknown Hero';
-    const heroImage = match.heroImage || '/images/placeholder.png'; // fallback image
-
-    const kills = match.kills ?? 0;
-    const deaths = match.deaths ?? 1; // Avoid division by zero
-    const assists = match.assists ?? 0;
-    const kda = ((kills + assists) / deaths).toFixed(2);
-
-    return `
-      <div class="match-card">
-        <img src="${heroImage}" alt="${heroName}" class="avatar" />
-        <div>
-          <h3>${heroName}</h3>
-          <p><strong>Date:</strong> ${formattedDate}</p>
-          <p><strong>K/D/A:</strong> ${kills}/${deaths}/${assists}</p>
-          <p><strong>KDA Ratio:</strong> ${kda}</p>
+      return `
+        <div class="match-card">
+          <img src="${heroImage}" alt="${match.heroName}" class="avatar" />
+          <div>
+            <h3>${match.heroName}</h3>
+            <p>Date: ${formattedDate}</p>
+            <p>K/D/A: ${match.kills}/${match.deaths}/${match.assists}</p>
+            <p>KDA Ratio: ${kdaRatio}</p>
+          </div>
         </div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  }
 
-  resultDiv.innerHTML = html;
-}
+  function renderChart(matches) {
+    const labels = matches.map((match, i) => {
+      const date = new Date(match.date);
+      return isNaN(date) ? `Match ${i + 1}` : date.toLocaleDateString();
+    });
 
-function renderChart(matches) {
-  const labels = matches.map((match, i) => {
-    const date = new Date(match.timestamp || match.created_at);
-    return isNaN(date) ? `Match ${i + 1}` : date.toLocaleDateString();
-  });
+    const data = matches.map(match => ((match.kills + match.assists) / Math.max(1, match.deaths)).toFixed(2));
 
-  const data = matches.map(match => {
-    const kills = match.kills ?? 0;
-    const deaths = match.deaths ?? 1;
-    const assists = match.assists ?? 0;
-    return ((kills + assists) / deaths).toFixed(2);
-  });
+    if (kdaChart) kdaChart.destroy();
 
-  if (kdaChart) kdaChart.destroy();
-
-  kdaChart = new Chart(chartCanvas, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'KDA Over Time',
-        data,
-        borderColor: 'rgba(75, 192, 192, 1)',
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        fill: true,
-        tension: 0.3
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: { display: true, text: 'KDA' }
-        },
-        x: {
-          title: { display: true, text: 'Match Date' }
+    kdaChart = new Chart(chartCanvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'KDA Over Time',
+          data,
+          borderColor: 'rgba(75, 192, 192, 1)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'KDA' }
+          },
+          x: {
+            title: { display: true, text: 'Match Date' }
+          }
         }
       }
-    }
-  });
-}
+    });
+  }
+});
