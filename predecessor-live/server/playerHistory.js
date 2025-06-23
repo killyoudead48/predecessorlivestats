@@ -1,37 +1,33 @@
-// playerHistory.js
 import fetch from 'node-fetch';
 
 export async function getPlayerMatchHistory(playerId, limit = 10) {
   try {
-    const matchUrl = `https://backend.production.omeda-aws.com/api/public/get-matches-by-player/player_id/${playerId}`;
-    const matchRes = await fetch(matchUrl);
-    const matchData = await matchRes.json();
+    const url = `https://omeda.city/players/${playerId}/matches.json?per_page=${limit}`;
+    console.log('Fetching match history from:', url);
 
-    const heroDataRes = await fetch(`https://backend.production.omeda-aws.com/api/public/hero/all`);
-    const heroData = await heroDataRes.json();
-    const heroMap = {};
-    for (const hero of heroData) {
-      heroMap[hero.Codename] = hero;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+
+    const data = await response.json();
+    if (!Array.isArray(data)) {
+      console.error('Unexpected data format:', data);
+      return [];
     }
 
-    const matches = matchData.matches.slice(0, limit).map(match => {
-      const player = match.teams.flatMap(t => t.players).find(p => p.player_id === playerId);
-      const codename = player.character;
-      const hero = heroMap[codename] || {};
-
+    // Normalize data to match frontend expectations
+    return data.map(match => {
+      const stats = match.stats || {};
       return {
-        date: match.created_at,
-        heroName: hero.DisplayName || codename || 'Unknown',
-        heroImage: hero.PortraitImageURL || '',
-        kills: player.kills,
-        deaths: player.deaths,
-        assists: player.assists,
+        timestamp: match.created_at,
+        hero: match.character || 'Unknown Hero',
+        hero_image: `https://omeda.city/heroes/${match.character?.toLowerCase()}.png`,
+        kills: stats.kills ?? 0,
+        deaths: stats.deaths ?? 1,
+        assists: stats.assists ?? 0
       };
     });
-
-    return matches;
-  } catch (error) {
-    console.error('Error fetching player match history:', error);
-    throw error;
+  } catch (err) {
+    console.error('Error fetching player history:', err);
+    return [];
   }
 }
