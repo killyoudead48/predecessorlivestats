@@ -1,33 +1,41 @@
 const form = document.getElementById('playerForm');
-const input = document.getElementById('playerId');
+const input = document.getElementById('playerName');
 const resultDiv = document.getElementById('results');
 const chartCanvas = document.getElementById('kdaChart').getContext('2d');
-let kdaChart;
+let kdaChart = null;
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const playerId = input.value.trim();
-  if (!playerId) return;
+  const playerName = input.value.trim();
+  if (!playerName) return;
 
   try {
-    const res = await fetch(`/api/player/${playerId}/history`);
-    const history = await res.json();
-    if (!Array.isArray(history) || history.length === 0) {
-      resultDiv.innerHTML = '<p>No match data found for this player.</p>';
-      return;
-    }
-    renderStats(history);
-    renderChart(history);
+    const idRes = await fetch(`/api/player-id/${playerName}`);
+    const { id } = await idRes.json();
+
+    const historyRes = await fetch(`/api/player/${id}/history`);
+    const matches = await historyRes.json();
+
+    renderStats(matches);
+    renderChart(matches);
   } catch (err) {
-    resultDiv.innerHTML = '<p>Error fetching stats. Please try again.</p>';
+    resultDiv.innerHTML = `<p>Error fetching stats. Please try again.</p>`;
     console.error(err);
   }
 });
 
 function renderStats(matches) {
+  if (!Array.isArray(matches) || matches.length === 0) {
+    resultDiv.innerHTML = `<p>No match data found.</p>`;
+    return;
+  }
+
   const html = matches.map(match => {
-    const date = new Date(match.date);
-    const formattedDate = isNaN(date) ? 'Unknown date' : date.toLocaleString();
+    const hero = match.hero_id || 'unknown';
+    const heroName = hero.charAt(0).toUpperCase() + hero.slice(1);
+    const imageUrl = `https://cdn.omeda.city/heroes/${hero}/icon.png`;
+
+    const date = new Date(match.created_at);
     const kills = match.kills ?? 0;
     const deaths = match.deaths ?? 1;
     const assists = match.assists ?? 0;
@@ -35,12 +43,12 @@ function renderStats(matches) {
 
     return `
       <div class="match-card">
-        <img src="${match.heroImage}" alt="${match.heroName}" class="avatar" />
+        <img src="${imageUrl}" alt="${heroName}" class="avatar" />
         <div>
-          <h3>${match.heroName}</h3>
-          <p>Date: ${formattedDate}</p>
+          <h3>${heroName}</h3>
+          <p>Date: ${date.toLocaleString()}</p>
           <p>K/D/A: ${kills}/${deaths}/${assists}</p>
-          <p>KDA Ratio: ${kda}</p>
+          <p>KDA: ${kda}</p>
         </div>
       </div>
     `;
@@ -50,15 +58,15 @@ function renderStats(matches) {
 }
 
 function renderChart(matches) {
-  const labels = matches.map((match, i) => {
-    const date = new Date(match.date);
+  const labels = matches.map((m, i) => {
+    const date = new Date(m.created_at);
     return isNaN(date) ? `Match ${i + 1}` : date.toLocaleDateString();
   });
 
-  const data = matches.map(match => {
-    const kills = match.kills ?? 0;
-    const deaths = match.deaths ?? 1;
-    const assists = match.assists ?? 0;
+  const data = matches.map(m => {
+    const kills = m.kills ?? 0;
+    const deaths = m.deaths ?? 1;
+    const assists = m.assists ?? 0;
     return ((kills + assists) / deaths).toFixed(2);
   });
 
@@ -71,10 +79,10 @@ function renderChart(matches) {
       datasets: [{
         label: 'KDA Over Time',
         data,
-        borderColor: 'rgba(255, 99, 132, 1)',
-        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        borderColor: '#4bc0c0',
+        backgroundColor: 'rgba(75,192,192,0.2)',
         fill: true,
-        tension: 0.4
+        tension: 0.3
       }]
     },
     options: {
@@ -91,3 +99,4 @@ function renderChart(matches) {
     }
   });
 }
+
