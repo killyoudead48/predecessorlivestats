@@ -2,96 +2,129 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Predecessor Player Stats</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #121212;
-      color: #fff;
-      margin: 0;
-      padding: 0;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 2rem auto;
-      padding: 1rem;
-      text-align: center;
-    }
-
-    form {
-      margin-bottom: 2rem;
-    }
-
-    input {
-      padding: 0.5rem;
-      width: 60%;
-      font-size: 1rem;
-      border-radius: 5px;
-      border: none;
-    }
-
-    button {
-      padding: 0.6rem 1rem;
-      font-size: 1rem;
-      background-color: #1e88e5;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      margin-left: 0.5rem;
-      cursor: pointer;
-    }
-
-    #results {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-
-    .match-card {
-      display: flex;
-      align-items: center;
-      background: #1f1f1f;
-      padding: 1rem;
-      border-radius: 8px;
-      gap: 1rem;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
-    }
-
-    .avatar {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    canvas {
-      margin-top: 2rem;
-      background-color: #fff;
-      border-radius: 8px;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Predecessor Match Stats</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>Predecessor Player Stats</h1>
     <form id="playerForm">
-      <input type="text" id="playerId" placeholder="Enter Player ID" required>
+      <input type="text" id="playerId" placeholder="Enter Player ID" required />
       <button type="submit">Search</button>
     </form>
-
-    <canvas id="kdaChart" width="600" height="300"></canvas>
-
     <div id="results"></div>
+    <canvas id="kdaChart"></canvas>
   </div>
 
-  <!-- Chart.js from CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const form = document.getElementById('playerForm');
+    const input = document.getElementById('playerId');
+    const resultDiv = document.getElementById('results');
+    const chartCanvas = document.getElementById('kdaChart').getContext('2d');
+    let kdaChart;
 
-  <!-- Main App Script -->
-  <script src="script.js"></script>
+    const heroMap = {
+      'Sevarog': 'https://cdn.predstats.gg/assets/sevarog.png',
+      'Feng Mao': 'https://cdn.predstats.gg/assets/fengmao.png',
+      'Khaimera': 'https://cdn.predstats.gg/assets/khaimera.png',
+      'Gideon': 'https://cdn.predstats.gg/assets/gideon.png',
+      'Twinblast': 'https://cdn.predstats.gg/assets/twinblast.png',
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const playerId = input.value.trim();
+      if (!playerId) return;
+
+      try {
+        const res = await fetch(`/api/player/${playerId}/history`);
+        const history = await res.json();
+        renderStats(history);
+        renderChart(history);
+      } catch (err) {
+        resultDiv.innerHTML = `<p>Error fetching stats. Please try again.</p>`;
+        console.error(err);
+      }
+    });
+
+    function renderStats(matches) {
+      if (!Array.isArray(matches) || matches.length === 0) {
+        resultDiv.innerHTML = `<p>No match data found for this player.</p>`;
+        return;
+      }
+
+      const html = matches.map(match => {
+        const date = new Date(match.timestamp || match.created_at || match.date);
+        const formattedDate = isNaN(date) ? 'Unknown date' : date.toLocaleString();
+
+        const hero = match.hero || match.character || match.heroName || 'Unknown Hero';
+        const avatarUrl = heroMap[hero] || 'https://cdn.predstats.gg/assets/default-hero.png';
+
+        const kills = Number(match.kills ?? 0);
+        const deaths = Number(match.deaths ?? 1);
+        const assists = Number(match.assists ?? 0);
+        const kda = ((kills + assists) / (deaths || 1)).toFixed(2);
+
+        return `
+          <div class="match-card">
+            <img src="${avatarUrl}" alt="${hero}" class="avatar" />
+            <div>
+              <h3>${hero}</h3>
+              <p>Date: ${formattedDate}</p>
+              <p>K/D/A: ${kills}/${deaths}/${assists}</p>
+              <p>KDA Ratio: ${kda}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      resultDiv.innerHTML = html;
+    }
+
+    function renderChart(matches) {
+      const labels = matches.map((match, i) => {
+        const date = new Date(match.timestamp || match.created_at || match.date);
+        return isNaN(date) ? `Match ${i + 1}` : date.toLocaleDateString();
+      });
+
+      const data = matches.map(match => {
+        const kills = Number(match.kills ?? 0);
+        const deaths = Number(match.deaths ?? 1);
+        const assists = Number(match.assists ?? 0);
+        return ((kills + assists) / (deaths || 1)).toFixed(2);
+      });
+
+      if (kdaChart) kdaChart.destroy();
+
+      kdaChart = new Chart(chartCanvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'KDA Over Time',
+            data,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'KDA' }
+            },
+            x: {
+              title: { display: true, text: 'Match Date' }
+            }
+          }
+        }
+      });
+    }
+  </script>
 </body>
 </html>
