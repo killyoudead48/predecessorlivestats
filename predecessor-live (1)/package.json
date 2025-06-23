@@ -1,0 +1,14 @@
+{
+  "name": "predecessor-live",
+  "version": "1.0.0",
+  "main": "server/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^3.4.0",
+    "ws": "^8.13.0"
+  }
+}
