@@ -40,7 +40,7 @@ async function fetchMatchDetails(matchId) {
 
 async function pollMatches() {
   while (true) {
-    const url = `https://backend.production.omeda-aws.com/api/public/get-matches-since/${lastEpoch}/`;
+    const url = `https://api.predecessor.pro/api/public/get-matches-since/${lastEpoch}/`;
     try {
       const res = await fetch(url);
       const matches = await res.json();
