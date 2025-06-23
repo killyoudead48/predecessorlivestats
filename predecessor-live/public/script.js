@@ -31,10 +31,11 @@ function renderStats(matches) {
     const formattedDate = isNaN(date) ? 'Unknown date' : date.toLocaleString();
 
     const hero = match.hero || match.character || 'Unknown Hero';
-    const avatarUrl = match.avatar || `https://example.com/heroes/${hero.toLowerCase()}.png`; // Replace with your actual base path
+    const heroSlug = hero.toLowerCase().replace(/\s+/g, '-');
+    const avatarUrl = `https://cdn.omeda.city/heroes/${heroSlug}.webp`; // replace with correct path if needed
 
     const kills = match.kills ?? 0;
-    const deaths = match.deaths ?? 1; // Avoid division by 0
+    const deaths = match.deaths ?? 1; // avoid division by zero
     const assists = match.assists ?? 0;
     const kda = ((kills + assists) / deaths).toFixed(2);
 
@@ -67,7 +68,7 @@ function renderChart(matches) {
     return ((kills + assists) / deaths).toFixed(2);
   });
 
-  if (kdaChart) kdaChart.destroy(); // Re-render if already exists
+  if (kdaChart) kdaChart.destroy(); // reset if already exists
 
   kdaChart = new Chart(chartCanvas, {
     type: 'line',
@@ -87,7 +88,7 @@ function renderChart(matches) {
       scales: {
         y: {
           beginAtZero: true,
-          title: { display: true, text: 'KDA' }
+          title: { display: true, text: 'KDA Ratio' }
         },
         x: {
           title: { display: true, text: 'Match Date' }
@@ -96,3 +97,4 @@ function renderChart(matches) {
     }
   });
 }
+
