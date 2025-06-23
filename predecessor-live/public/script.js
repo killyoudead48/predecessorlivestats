@@ -5,6 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const chartCanvas = document.getElementById('kdaChart').getContext('2d');
   let kdaChart;
 
+  if (!form || !input || !resultDiv || !chartCanvas) {
+    console.error("One or more required elements were not found.");
+    return;
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const playerId = input.value.trim();
@@ -28,60 +33,36 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function renderStats(matches) {
-    resultDiv.innerHTML = matches.map(match => {
-      const date = new Date(match.date);
-      const formattedDate = isNaN(date) ? 'Unknown' : date.toLocaleString();
-      const heroImage = `https://cdn.omeda.city/heroes/${match.heroName.toLowerCase()}.webp`;
-      const kdaRatio = ((match.kills + match.assists) / Math.max(1, match.deaths)).toFixed(2);
-
-      return `
-        <div class="match-card">
-          <img src="${heroImage}" alt="${match.heroName}" class="avatar" />
-          <div>
-            <h3>${match.heroName}</h3>
-            <p>Date: ${formattedDate}</p>
-            <p>K/D/A: ${match.kills}/${match.deaths}/${match.assists}</p>
-            <p>KDA Ratio: ${kdaRatio}</p>
-          </div>
-        </div>
-      `;
-    }).join('');
+    const statsHtml = matches.map(match => `
+      <div class="match">
+        <img src="${match.heroImage}" alt="${match.heroName}" class="hero-img">
+        <p><strong>${match.heroName}</strong></p>
+        <p>KDA: ${match.kills}/${match.deaths}/${match.assists}</p>
+      </div>
+    `).join('');
+    resultDiv.innerHTML = statsHtml;
   }
 
   function renderChart(matches) {
-    const labels = matches.map((match, i) => {
-      const date = new Date(match.date);
-      return isNaN(date) ? `Match ${i + 1}` : date.toLocaleDateString();
-    });
+    const labels = matches.map((_, index) => `Match ${index + 1}`);
+    const kdaData = matches.map(match => (match.kills + match.assists) / (match.deaths || 1));
 
-    const data = matches.map(match => ((match.kills + match.assists) / Math.max(1, match.deaths)).toFixed(2));
-
-    if (kdaChart) kdaChart.destroy();
+    if (kdaChart) {
+      kdaChart.destroy();
+    }
 
     kdaChart = new Chart(chartCanvas, {
       type: 'line',
       data: {
         labels,
         datasets: [{
-          label: 'KDA Over Time',
-          data,
+          label: 'KDA Ratio',
+          data: kdaData,
           borderColor: 'rgba(75, 192, 192, 1)',
           backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          tension: 0.3,
-          fill: true
+          fill: true,
+          tension: 0.4
         }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: { display: true, text: 'KDA' }
-          },
-          x: {
-            title: { display: true, text: 'Match Date' }
-          }
-        }
       }
     });
   }
