@@ -3,7 +3,6 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import getPlayerMatchHistory from './playerHistory.js';
-import fetch from 'node-fetch';
 import dns from 'dns/promises';
 
 const app = express();
