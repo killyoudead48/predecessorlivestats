@@ -12,36 +12,32 @@ form.addEventListener('submit', async (e) => {
   try {
     const res = await fetch(`/api/player/${playerId}/history`);
     const history = await res.json();
-
     if (!Array.isArray(history) || history.length === 0) {
       resultDiv.innerHTML = '<p>No match data found for this player.</p>';
       return;
     }
-
     renderStats(history);
     renderChart(history);
   } catch (err) {
-    resultDiv.innerHTML = `<p>Error fetching stats. Please try again.</p>`;
+    resultDiv.innerHTML = '<p>Error fetching stats. Please try again.</p>';
     console.error(err);
   }
 });
 
 function renderStats(matches) {
   const html = matches.map(match => {
-    const date = new Date(match.timestamp || match.created_at);
+    const date = new Date(match.date);
     const formattedDate = isNaN(date) ? 'Unknown date' : date.toLocaleString();
     const kills = match.kills ?? 0;
     const deaths = match.deaths ?? 1;
     const assists = match.assists ?? 0;
     const kda = ((kills + assists) / deaths).toFixed(2);
-    const hero = match.heroName || 'Unknown Hero';
-    const avatarUrl = match.avatar || '';
 
     return `
       <div class="match-card">
-        <img src="${avatarUrl}" alt="${hero}" class="avatar" />
+        <img src="${match.heroImage}" alt="${match.heroName}" class="avatar" />
         <div>
-          <h3>${hero}</h3>
+          <h3>${match.heroName}</h3>
           <p>Date: ${formattedDate}</p>
           <p>K/D/A: ${kills}/${deaths}/${assists}</p>
           <p>KDA Ratio: ${kda}</p>
@@ -55,7 +51,7 @@ function renderStats(matches) {
 
 function renderChart(matches) {
   const labels = matches.map((match, i) => {
-    const date = new Date(match.timestamp || match.created_at);
+    const date = new Date(match.date);
     return isNaN(date) ? `Match ${i + 1}` : date.toLocaleDateString();
   });
 
@@ -75,10 +71,10 @@ function renderChart(matches) {
       datasets: [{
         label: 'KDA Over Time',
         data,
-        borderColor: 'rgba(75, 192, 192, 1)',
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
         fill: true,
-        tension: 0.3
+        tension: 0.4
       }]
     },
     options: {
