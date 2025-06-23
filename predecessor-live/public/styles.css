@@ -1,96 +1,98 @@
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #121212;
-  color: #ffffff;
+  background-color: #10141c;
+  color: #f0f0f0;
   margin: 0;
   padding: 0;
 }
 
 .container {
-  max-width: 800px;
-  margin: 2rem auto;
-  padding: 1rem;
-  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
 h1 {
-  font-size: 2rem;
-  margin-bottom: 1.5rem;
-  color: #ffffff;
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #00c2ff;
 }
 
 form {
+  display: flex;
+  justify-content: center;
   margin-bottom: 2rem;
 }
 
 input[type="text"] {
-  padding: 0.5rem;
-  width: 60%;
+  padding: 0.7rem;
   font-size: 1rem;
-  border-radius: 5px;
-  border: none;
-  background-color: #1e1e1e;
-  color: #ffffff;
-  outline: none;
+  border: 1px solid #ccc;
+  border-radius: 8px 0 0 8px;
+  width: 300px;
+  background-color: #1b2029;
+  color: #fff;
 }
 
 button {
-  padding: 0.6rem 1.2rem;
+  padding: 0.7rem 1.2rem;
   font-size: 1rem;
-  background-color: #1e88e5;
+  background-color: #00c2ff;
   color: white;
   border: none;
-  border-radius: 5px;
-  margin-left: 0.5rem;
+  border-radius: 0 8px 8px 0;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.3s;
 }
 
 button:hover {
-  background-color: #1565c0;
+  background-color: #009ec7;
 }
 
 #results {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.2rem;
 }
 
 .match-card {
+  background-color: #1e2633;
+  border-radius: 10px;
+  padding: 1rem;
   display: flex;
   align-items: center;
-  background: #1f1f1f;
-  padding: 1rem;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
   gap: 1rem;
-  text-align: left;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  transition: transform 0.2s ease-in-out;
 }
 
-.match-card img.avatar {
+.match-card:hover {
+  transform: scale(1.03);
+}
+
+.avatar {
   width: 64px;
   height: 64px;
-  border-radius: 50%;
+  border-radius: 8px;
   object-fit: cover;
-  border: 2px solid #444;
+  border: 2px solid #00c2ff;
 }
 
-.match-card h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1.2rem;
-  color: #90caf9;
+h3 {
+  margin: 0 0 0.4rem;
+  color: #ffffff;
 }
 
-.match-card p {
+p {
   margin: 0.2rem 0;
   font-size: 0.95rem;
-  color: #ddd;
+  color: #cccccc;
 }
 
 canvas {
-  background: #ffffff;
-  border-radius: 10px;
-  margin-top: 1.5rem;
+  margin-top: 3rem;
+  background-color: #1e2633;
+  border-radius: 8px;
   padding: 1rem;
 }
+
