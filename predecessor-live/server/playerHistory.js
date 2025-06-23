@@ -5,7 +5,7 @@ const BASE_URL = 'https://api.prod.omeda.city/v1';
 export async function getPlayerMatchHistory(playerId) {
   try {
     // Step 1: Get list of match IDs for the player
-    const matchRes = await fetch(`${BASE_URL}/matches/get-matches-by-player?player_id=${playerId}&limit=10`);
+   const matchesRes = await fetch(`https://api.prod.thepredecessor.com/v1/matches/get-matches-by-player?player_id=${playerId}&limit=10`);
     if (!matchRes.ok) throw new Error(`Failed to fetch matches: ${matchRes.status}`);
     const matchData = await matchRes.json();
 
@@ -15,7 +15,7 @@ export async function getPlayerMatchHistory(playerId) {
     // Step 2: Get full match details for each match
     const matchDetails = await Promise.all(
       matches.map(async (match) => {
-        const res = await fetch(`${BASE_URL}/matches/get?id=${match.match_id}`);
+        const res = await fetch(`https://api.prod.thepredecessor.com/v1/matches/get-matches-by-player?player_id=${playerId}&limit=10'}/matches/get?id=${match.match_id}`);
         if (!res.ok) throw new Error(`Failed to fetch match details for ${match.match_id}`);
         return res.json();
       })
