@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.WebsocketServer({ server });
+const wss = new WebSocket.WebSocketServer({ server });
 
 let clients = [];
 
