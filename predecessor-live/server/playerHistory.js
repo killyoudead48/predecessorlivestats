@@ -1,28 +1,23 @@
-// =====================
-// server/playerHistory.js
-// =====================
-
 import fetch from 'node-fetch';
 
-export async function getPlayerMatchHistory(playerId, limit = 10) {
-  try {
-    const url = `https://backend.production.omeda-aws.com/api/public/get-matches-by-player/${playerId}/`;
-    console.log('Fetching:', url);
+export async function getPlayerMatchHistory(playerId, limit = 5) {
+  const url = `https://omeda.city/players/${playerId}/matches.json?limit=${limit}`;
+  console.log("Fetching:", url);
 
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`Failed to fetch: ${res.status} - ${await res.text()}`);
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+    
+    const data = await response.json();
+
+    if (!Array.isArray(data)) {
+      console.error("Unexpected response format:", data);
+      return [];
     }
 
-    const data = await res.json();
-    console.log('Response:', data);
-
-    const matches = data.matches || data || [];
-    if (!Array.isArray(matches)) throw new Error('Invalid matches data');
-
-    return matches.slice(0, limit);
+    return data;
   } catch (err) {
-    console.error('Error in getPlayerMatchHistory:', err);
+    console.error("Failed to fetch player match history:", err.message);
     return [];
   }
 }
