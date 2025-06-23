@@ -1,18 +1,17 @@
-// server/playerHistory.js
 import fetch from 'node-fetch';
 
 export default async function getPlayerMatchHistory(playerId) {
   const url = `https://api.prod.omeda.city/v1/matches/get-matches-by-player?player_id=${playerId}&limit=10`;
-
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`API response not ok: ${res.status}`);
-    }
-    const data = await res.json();
-    return data.matches || [];
-  } catch (err) {
-    console.error('Error fetching match history:', err);
-    throw err;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch matches for player ${playerId}`);
   }
+  const data = await response.json();
+  return data.matches.map(match => ({
+    matchId: match.id,
+    heroName: match.hero_name || 'Unknown',
+    kills: match.kills || 0,
+    deaths: match.deaths || 0,
+    assists: match.assists || 0,
+  }));
 }
