@@ -58,6 +58,39 @@ if (savedId) {
   input.value = savedId;
   loadPlayerHistory(savedId);
 }
+    const form = document.getElementById('player-form');
+const input = document.getElementById('player-id-input');
+const output = document.getElementById('player-output');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const playerId = input.value.trim();
+  if (!playerId) return;
+
+  output.innerHTML = 'Loading...';
+  try {
+    const res = await fetch(`/api/player/${playerId}/history`);
+    const data = await res.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      output.innerHTML = '<p>No match data found.</p>';
+      return;
+    }
+
+    output.innerHTML = data.map(match => `
+      <div class="match-card">
+        <p><strong>Match ID:</strong> ${match.id}</p>
+        <p><strong>Game Mode:</strong> ${match.game_mode}</p>
+        <p><strong>Started At:</strong> ${new Date(match.started_at).toLocaleString()}</p>
+        <p><strong>Duration:</strong> ${match.duration_minutes} min</p>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error(err);
+    output.innerHTML = '<p>Error loading stats.</p>';
+  }
+});
+
 
   }
 };
