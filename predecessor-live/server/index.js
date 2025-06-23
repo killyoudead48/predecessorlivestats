@@ -19,6 +19,12 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
+import dns from 'dns';
+dns.lookup('api.prod.omeda.city', (err, address) => {
+  if (err) console.error('🔥 DNS lookup failed:', err);
+  else console.log('✅ DNS lookup succeeded:', address);
+});
+
 // API route for player match history
 app.get('/api/player/:id/history', async (req, res) => {
   try {
