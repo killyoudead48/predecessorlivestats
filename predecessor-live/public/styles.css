@@ -1,98 +1,59 @@
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #10141c;
-  color: #f0f0f0;
+  font-family: Arial, sans-serif;
+  background-color: #0d1117;
+  color: #c9d1d9;
   margin: 0;
-  padding: 0;
+  padding: 20px;
 }
 
 .container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-h1 {
-  text-align: center;
-  margin-bottom: 2rem;
-  color: #00c2ff;
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
+  background: #161b22;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.5);
 }
 
 form {
   display: flex;
-  justify-content: center;
-  margin-bottom: 2rem;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
-input[type="text"] {
-  padding: 0.7rem;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px 0 0 8px;
-  width: 300px;
-  background-color: #1b2029;
-  color: #fff;
+input, button {
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+}
+
+input {
+  flex: 1;
 }
 
 button {
-  padding: 0.7rem 1.2rem;
-  font-size: 1rem;
-  background-color: #00c2ff;
+  background-color: #238636;
   color: white;
-  border: none;
-  border-radius: 0 8px 8px 0;
   cursor: pointer;
-  transition: background-color 0.3s;
 }
 
 button:hover {
-  background-color: #009ec7;
-}
-
-#results {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1.2rem;
+  background-color: #2ea043;
 }
 
 .match-card {
-  background-color: #1e2633;
-  border-radius: 10px;
-  padding: 1rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  transition: transform 0.2s ease-in-out;
-}
-
-.match-card:hover {
-  transform: scale(1.03);
+  background: #21262d;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
 }
 
 .avatar {
   width: 64px;
   height: 64px;
   border-radius: 8px;
-  object-fit: cover;
-  border: 2px solid #00c2ff;
-}
-
-h3 {
-  margin: 0 0 0.4rem;
-  color: #ffffff;
-}
-
-p {
-  margin: 0.2rem 0;
-  font-size: 0.95rem;
-  color: #cccccc;
-}
-
-canvas {
-  margin-top: 3rem;
-  background-color: #1e2633;
-  border-radius: 8px;
-  padding: 1rem;
+  margin-right: 15px;
 }
 
