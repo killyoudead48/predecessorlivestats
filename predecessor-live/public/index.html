@@ -1,0 +1,19 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Predecessor Stats</title>
+  <script defer src="app.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white p-4">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-4">Predecessor Match Stats</h1>
+    <input id="playerId" placeholder="Enter Player ID" class="p-2 rounded text-black w-full mb-4">
+    <button onclick="searchPlayer()" class="bg-blue-600 hover:bg-blue-800 px-4 py-2 rounded">Search</button>
+    <div id="matches" class="mt-6 space-y-4"></div>
+  </div>
+</body>
+</html>
