@@ -27,21 +27,21 @@ function renderStats(matches) {
   }
 
   const html = matches.map(match => {
+    const heroRaw = match.hero || match.character || 'Unknown Hero';
+    const hero = heroRaw.charAt(0).toUpperCase() + heroRaw.slice(1);
+    const avatarUrl = `https://cdn.omeda.city/heroes/${hero.toLowerCase().replace(/ /g, '-')}.webp`;
+
+    const kills = match.kills ?? 0;
+    const deaths = Math.max(match.deaths ?? 1, 1);
+    const assists = match.assists ?? 0;
+    const kda = ((kills + assists) / deaths).toFixed(2);
+
     const date = new Date(match.timestamp || match.created_at || match.date);
     const formattedDate = isNaN(date) ? 'Unknown date' : date.toLocaleString();
 
-    const hero = match.hero_name || match.hero || match.character || 'Unknown Hero';
-    const heroSlug = hero.toLowerCase().replace(/\s+/g, '');
-    const avatarUrl = `https://cdn.omeda.city/heroes/${heroSlug}.webp`; // Adjust to actual image CDN path
-
-    const kills = Number(match.kills) || 0;
-    const deaths = Number(match.deaths) || 0;
-    const assists = Number(match.assists) || 0;
-    const kda = deaths === 0 ? kills + assists : ((kills + assists) / deaths).toFixed(2);
-
     return `
       <div class="match-card">
-        <img src="${avatarUrl}" alt="${hero}" class="avatar" onerror="this.src='https://cdn.omeda.city/heroes/default.webp'" />
+        <img src="${avatarUrl}" alt="${hero}" class="avatar" />
         <div>
           <h3>${hero}</h3>
           <p>Date: ${formattedDate}</p>
@@ -62,14 +62,13 @@ function renderChart(matches) {
   });
 
   const data = matches.map(match => {
-    const kills = Number(match.kills) || 0;
-    const deaths = Number(match.deaths) || 0;
-    const assists = Number(match.assists) || 0;
-    const kda = deaths === 0 ? kills + assists : ((kills + assists) / deaths).toFixed(2);
-    return kda;
+    const kills = match.kills ?? 0;
+    const deaths = Math.max(match.deaths ?? 1, 1);
+    const assists = match.assists ?? 0;
+    return ((kills + assists) / deaths).toFixed(2);
   });
 
-  if (kdaChart) kdaChart.destroy(); // Clear previous chart
+  if (kdaChart) kdaChart.destroy();
 
   kdaChart = new Chart(chartCanvas, {
     type: 'line',
