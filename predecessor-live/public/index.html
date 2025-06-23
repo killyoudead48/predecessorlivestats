@@ -1,47 +1,101 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Predecessor Stats</title>
-  <script defer src="app.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Predecessor Stats Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0e0e10;
+      color: #fff;
+      margin: 0;
+      padding: 2rem;
+    }
+    h1 {
+      color: #e63946;
+    }
+    input, button {
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-right: 0.5rem;
+      border-radius: 4px;
+      border: none;
+    }
+    button {
+      background-color: #1d3557;
+      color: white;
+      cursor: pointer;
+    }
+    .match, .history {
+      background: #1a1a1d;
+      margin: 1rem 0;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+    .match pre, .history pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
 </head>
-<body class="bg-gray-900 text-white p-4">
-  <div class="max-w-4xl mx-auto">
-    <h1 class="text-3xl font-bold mb-4">Predecessor Match Stats</h1>
-    <input id="playerId" placeholder="Enter Player ID" class="p-2 rounded text-black w-full mb-4">
-    <button onclick="searchPlayer()" class="bg-blue-600 hover:bg-blue-800 px-4 py-2 rounded">Search</button>
-    <div id="matches" class="mt-6 space-y-4"></div>
+<body>
+  <h1>Predecessor Match Stats</h1>
+
+  <div>
+    <input id="playerId" type="text" placeholder="Enter Player ID (UUID)" />
+    <button onclick="loadHistory()">Search</button>
   </div>
-  <form id="playerSearch">
-  <input type="text" id="playerId" placeholder="Enter Player ID" />
-  <button type="submit">Search</button>
-</form>
 
-<div id="matchHistory"></div>
+  <h2>Live Matches</h2>
+  <div id="liveMatches"></div>
 
-<script>
-document.getElementById('playerSearch').addEventListener('submit', async e => {
-  e.preventDefault();
-  const id = document.getElementById('playerId').value;
-  const res = await fetch(`/api/player/${id}/history`);
-  const matches = await res.json();
-  
-  const output = matches.map(m => `
-    <div style="margin:1em 0;padding:1em;border:1px solid #444;background:#111;color:#eee">
-      <strong>Hero:</strong> ${m.player_stats?.hero || 'Unknown'}<br>
-      <strong>K/D/A:</strong> ${m.player_stats?.kills}/${m.player_stats?.deaths}/${m.player_stats?.assists}<br>
-      <strong>Team:</strong> ${m.player_stats?.team}, <strong>Result:</strong> ${m.player_stats?.result}<br>
-      <strong>Started:</strong> ${new Date(m.started_at).toLocaleString()}<br>
-      <strong>Duration:</strong> ${(m.duration/60).toFixed(1)} minutes
-    </div>
-  `).join('');
-  
-  document.getElementById('matchHistory').innerHTML = output || 'No match data found.';
-});
-</script>
+  <h2>Player History</h2>
+  <div id="playerHistory"></div>
 
+  <script>
+    const liveMatchesDiv = document.getElementById('liveMatches');
+    const playerHistoryDiv = document.getElementById('playerHistory');
+
+    // Connect to WebSocket for live match updates
+    const ws = new WebSocket(`wss://${window.location.host}`);
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'match') {
+        const div = document.createElement('div');
+        div.className = 'match';
+        div.innerHTML = `<strong>Match ID:</strong> ${data.match.id}<br/><pre>${JSON.stringify(data.match, null, 2)}</pre>`;
+        liveMatchesDiv.prepend(div);
+        if (liveMatchesDiv.childElementCount > 5) {
+          liveMatchesDiv.removeChild(liveMatchesDiv.lastChild);
+        }
+      }
+    };
+
+    async function loadHistory() {
+      const playerId = document.getElementById('playerId').value.trim();
+      if (!playerId) return;
+
+      try {
+        const res = await fetch(`/api/player/${playerId}/history`);
+        const history = await res.json();
+
+        playerHistoryDiv.innerHTML = '';
+        if (history && Array.isArray(history)) {
+          history.forEach(match => {
+            const div = document.createElement('div');
+            div.className = 'history';
+            div.innerHTML = `<strong>Match ID:</strong> ${match.id}<br/><pre>${JSON.stringify(match, null, 2)}</pre>`;
+            playerHistoryDiv.appendChild(div);
+          });
+        } else {
+          playerHistoryDiv.innerHTML = '<p>No history found or API error.</p>';
+        }
+      } catch (err) {
+        console.error(err);
+        playerHistoryDiv.innerHTML = `<p style="color:red;">Error fetching history</p>`;
+      }
+    }
+  </script>
 </body>
 </html>
