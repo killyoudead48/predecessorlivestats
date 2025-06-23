@@ -13,5 +13,51 @@ ws.onmessage = event => {
       </div>
     `;
     output.innerHTML = html + output.innerHTML;
+    const form = document.getElementById('player-form');
+const input = document.getElementById('player-id-input');
+const output = document.getElementById('output');
+const header = document.getElementById('player-header');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const playerId = input.value.trim();
+  if (playerId) {
+    localStorage.setItem('playerId', playerId);
+    loadPlayerHistory(playerId);
+  }
+});
+
+async function loadPlayerHistory(playerId) {
+  header.textContent = `Stats for Player: ${playerId}`;
+  output.innerHTML = 'Loading...';
+  try {
+    const res = await fetch(`/api/player/${playerId}/history`);
+    const data = await res.json();
+
+    if (!data.length) {
+      output.innerHTML = '<p>No match history found.</p>';
+      return;
+    }
+
+    output.innerHTML = data.map(match => `
+      <div class="match-card">
+        <p><strong>Match ID:</strong> ${match.id}</p>
+        <p><strong>Date:</strong> ${new Date(match.started_at).toLocaleString()}</p>
+        <p><strong>Duration:</strong> ${match.duration_minutes} mins</p>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error(err);
+    output.innerHTML = '<p>Error loading data.</p>';
+  }
+}
+
+// Auto-load if saved
+const savedId = localStorage.getItem('playerId');
+if (savedId) {
+  input.value = savedId;
+  loadPlayerHistory(savedId);
+}
+
   }
 };
