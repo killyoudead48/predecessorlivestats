@@ -9,11 +9,26 @@ export async function getPlayerMatchHistory(playerId) {
     fetch(heroesUrl)
   ]);
 
-  const matches = await matchRes.json();
-  const heroes = await heroesRes.json();
+  if (!matchRes.ok) {
+    throw new Error(`Failed to fetch matches: ${matchRes.status}`);
+  }
+  if (!heroesRes.ok) {
+    throw new Error(`Failed to fetch heroes: ${heroesRes.status}`);
+  }
+
+  const matchJson = await matchRes.json();
+  const heroJson = await heroesRes.json();
+
+  // Defensive check: ensure matches is an array
+  const matches = Array.isArray(matchJson) ? matchJson : matchJson.data ?? [];
+
+  if (!Array.isArray(matches)) {
+    console.error('Unexpected match data structure:', matchJson);
+    throw new Error('Invalid match data received from API');
+  }
 
   const heroMap = {};
-  heroes.forEach(hero => {
+  heroJson.forEach(hero => {
     heroMap[hero.id] = {
       name: hero.name,
       image: hero.image_portrait
@@ -32,4 +47,3 @@ export async function getPlayerMatchHistory(playerId) {
     };
   });
 }
-
