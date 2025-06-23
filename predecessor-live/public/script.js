@@ -12,15 +12,15 @@ form.addEventListener('submit', async (e) => {
   try {
     const res = await fetch(`/api/player/${playerId}/history`);
     const history = await res.json();
-    renderStats(history);
-    renderChart(history);
+    renderStats(history, playerId);
+    renderChart(history, playerId);
   } catch (err) {
     resultDiv.innerHTML = `<p>Error fetching stats. Please try again.</p>`;
     console.error(err);
   }
 });
 
-function renderStats(matches) {
+function renderStats(matches, playerId) {
   if (!Array.isArray(matches) || matches.length === 0) {
     resultDiv.innerHTML = `<p>No match data found for this player.</p>`;
     return;
@@ -30,18 +30,21 @@ function renderStats(matches) {
     const date = new Date(match.timestamp || match.created_at || match.date);
     const formattedDate = isNaN(date) ? 'Unknown date' : date.toLocaleString();
 
-    const hero = match.hero || match.character || 'Unknown Hero';
-    const heroSlug = hero.toLowerCase().replace(/\s+/g, '-');
-    const avatarUrl = `https://cdn.omeda.city/heroes/${heroSlug}.webp`; // replace with correct path if needed
+    const player = match.players.find(p => p.player_id === playerId);
+    if (!player) return '<p>Match data missing for player.</p>';
 
-    const kills = match.kills ?? 0;
-    const deaths = match.deaths ?? 1; // avoid division by zero
-    const assists = match.assists ?? 0;
+    const hero = player.hero || player.character || 'Unknown';
+    const heroSlug = hero.toLowerCase().replace(/\s+/g, '-');
+    const avatarUrl = `https://cdn.omeda.city/heroes/${heroSlug}.webp`;
+
+    const kills = player.kills ?? 0;
+    const deaths = player.deaths ?? 1; // Prevent divide by 0
+    const assists = player.assists ?? 0;
     const kda = ((kills + assists) / deaths).toFixed(2);
 
     return `
       <div class="match-card">
-        <img src="${avatarUrl}" alt="${hero}" class="avatar" />
+        <img src="${avatarUrl}" alt="${hero}" class="avatar" onerror="this.onerror=null;this.src='fallback.png';" />
         <div>
           <h3>${hero}</h3>
           <p>Date: ${formattedDate}</p>
@@ -55,20 +58,26 @@ function renderStats(matches) {
   resultDiv.innerHTML = html;
 }
 
-function renderChart(matches) {
-  const labels = matches.map((match, i) => {
+function renderChart(matches, playerId) {
+  const labels = [];
+  const data = [];
+
+  matches.forEach((match, i) => {
     const date = new Date(match.timestamp || match.created_at || match.date);
-    return isNaN(date) ? `Match ${i + 1}` : date.toLocaleDateString();
+    labels.push(isNaN(date) ? `Match ${i + 1}` : date.toLocaleDateString());
+
+    const player = match.players.find(p => p.player_id === playerId);
+    if (player) {
+      const kills = player.kills ?? 0;
+      const deaths = player.deaths ?? 1;
+      const assists = player.assists ?? 0;
+      data.push(((kills + assists) / deaths).toFixed(2));
+    } else {
+      data.push(null);
+    }
   });
 
-  const data = matches.map(match => {
-    const kills = match.kills ?? 0;
-    const deaths = match.deaths ?? 1;
-    const assists = match.assists ?? 0;
-    return ((kills + assists) / deaths).toFixed(2);
-  });
-
-  if (kdaChart) kdaChart.destroy(); // reset if already exists
+  if (kdaChart) kdaChart.destroy();
 
   kdaChart = new Chart(chartCanvas, {
     type: 'line',
@@ -88,7 +97,7 @@ function renderChart(matches) {
       scales: {
         y: {
           beginAtZero: true,
-          title: { display: true, text: 'KDA Ratio' }
+          title: { display: true, text: 'KDA' }
         },
         x: {
           title: { display: true, text: 'Match Date' }
@@ -97,4 +106,3 @@ function renderChart(matches) {
     }
   });
 }
-
