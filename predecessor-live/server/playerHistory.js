@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 export default async function getPlayerMatchHistory(playerId) {
-  const url = `https://backend.production.omeda-aws.com/api/public/get-matches-by-player/player_id/${playerId}?limit=10`;
+  const url = `https://api.prod.omeda.city/api/public/get-matches-by-player/player_id/${playerId}?limit=10`;
 
   try {
     const res = await fetch(url);
