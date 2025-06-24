@@ -1,60 +1,53 @@
 import express from 'express';
-import path from 'path';
 import fetch from 'node-fetch';
-import getPlayerMatchHistory from './playerHistory.js';
-import { fileURLToPath } from 'url';
+import cors from 'cors';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Resolve __dirname in ES module
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+app.use(cors());
+app.use(express.static('public'));
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, '../public')));
+const OMEDA_API_BASE = 'https://api.thepredecessor.com/v1';
 
-// API route to get player ID from name
+// Resolve player name to player ID
 app.get('/api/player/:name', async (req, res) => {
-  const playerName = req.params.name;
-
+  const { name } = req.params;
   try {
-    const response = await fetch(`https://backend.production.omeda-aws.com/api/public/get-player?player_name=${playerName}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch player ID: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (!data || !data.player || !data.player.player_id) {
-      return res.status(404).json({ error: 'Player not found' });
-    }
-
-    res.json({ playerId: data.player.player_id });
+    const response = await fetch(`${OMEDA_API_BASE}/players/find-by-name?player_name=${encodeURIComponent(name)}`);
+    if (!response.ok) throw new Error(`Failed to resolve player name: ${response.status}`);
+    const { player_id } = await response.json();
+    res.json({ playerId: player_id });
   } catch (err) {
-    console.error('Error in /api/player/:name:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Error resolving player name:', err);
+    res.status(500).json({ error: 'Failed to resolve player name' });
   }
 });
 
-// API route to get match history by player ID
-app.get('/api/player/:id/history', async (req, res) => {
-  const playerId = req.params.id;
-
+app.get('/api/player/:id/matches', async (req, res) => {
+  const { id } = req.params;
   try {
-    const matchHistory = await getPlayerMatchHistory(playerId);
-    res.json(matchHistory);
+    const response = await fetch(`${OMEDA_API_BASE}/players/${id}/matches?limit=10`);
+    if (!response.ok) throw new Error(`Failed to fetch matches: ${response.status}`);
+    const matchList = await response.json();
+    res.json(matchList);
   } catch (err) {
-    console.error('Error in /api/player/:id/history:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Error fetching matches:', err);
+    res.status(500).json({ error: 'Failed to fetch matches' });
   }
 });
 
-// Fallback route to serve frontend
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+app.get('/api/match/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const response = await fetch(`${OMEDA_API_BASE}/matches/${id}`);
+    if (!response.ok) throw new Error(`Failed to fetch match: ${response.status}`);
+    const matchDetails = await response.json();
+    res.json(matchDetails);
+  } catch (err) {
+    console.error('Error fetching match detail:', err);
+    res.status(500).json({ error: 'Failed to fetch match detail' });
+  }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
