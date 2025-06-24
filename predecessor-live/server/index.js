@@ -1,53 +1,62 @@
+// server/index.js
 import express from 'express';
 import fetch from 'node-fetch';
-import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(express.static('public'));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const OMEDA_API_BASE = 'https://api.thepredecessor.com/v1';
+app.use(express.static(path.join(__dirname, '../public')));
 
-// Resolve player name to player ID
+// ✅ 1. Resolve player name to ID
 app.get('/api/player/:name', async (req, res) => {
   const { name } = req.params;
   try {
-    const response = await fetch(`${OMEDA_API_BASE}/players/find-by-name?player_name=${encodeURIComponent(name)}`);
-    if (!response.ok) throw new Error(`Failed to resolve player name: ${response.status}`);
-    const { player_id } = await response.json();
-    res.json({ playerId: player_id });
+    const response = await fetch(`https://backend.prod.omeda.city/api/public/get-player?player_name=${name}`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+    const data = await response.json();
+    if (!data?.player_id) return res.status(404).json({ error: 'Player ID not found' });
+
+    res.json({ playerId: data.player_id });
   } catch (err) {
     console.error('Error resolving player name:', err);
     res.status(500).json({ error: 'Failed to resolve player name' });
   }
 });
 
+// ✅ 2. Get match history for a player
 app.get('/api/player/:id/matches', async (req, res) => {
   const { id } = req.params;
   try {
-    const response = await fetch(`${OMEDA_API_BASE}/players/${id}/matches?limit=10`);
-    if (!response.ok) throw new Error(`Failed to fetch matches: ${response.status}`);
-    const matchList = await response.json();
-    res.json(matchList);
+    const response = await fetch(`https://backend.prod.omeda.city/api/public/get-matches-by-player?player_id=${id}`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+    const data = await response.json();
+    res.json(data.matches || []);
   } catch (err) {
-    console.error('Error fetching matches:', err);
-    res.status(500).json({ error: 'Failed to fetch matches' });
+    console.error('Error fetching match history:', err);
+    res.status(500).json({ error: 'Failed to fetch match history' });
   }
 });
 
+// ✅ 3. Get detailed match info
 app.get('/api/match/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const response = await fetch(`${OMEDA_API_BASE}/matches/${id}`);
-    if (!response.ok) throw new Error(`Failed to fetch match: ${response.status}`);
-    const matchDetails = await response.json();
-    res.json(matchDetails);
+    const response = await fetch(`https://backend.prod.omeda.city/api/public/get-match?match_id=${id}`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+    const data = await response.json();
+    res.json(data);
   } catch (err) {
-    console.error('Error fetching match detail:', err);
-    res.status(500).json({ error: 'Failed to fetch match detail' });
+    console.error('Error fetching match details:', err);
+    res.status(500).json({ error: 'Failed to fetch match details' });
   }
 });
 
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server listening on port ${PORT}`));
