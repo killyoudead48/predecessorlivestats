@@ -2,20 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Predecessor Live Stats</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="container">
-    <h1>Predecessor Player Stats</h1>
-    <form id="playerForm">
-      <input type="text" id="playerId" placeholder="Enter Player ID" required />
+    <h1>Predecessor Live Stats</h1>
+    <form id="player-form">
+      <input type="text" id="player-input" placeholder="Enter player name" required />
       <button type="submit">Get Stats</button>
     </form>
-    <div id="results"></div>
-    <canvas id="kdaChart" width="400" height="200"></canvas>
+    <div id="result"></div>
+    <canvas id="kda-chart"></canvas>
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>
 </body>
