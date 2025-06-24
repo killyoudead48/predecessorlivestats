@@ -14,3 +14,9 @@
     "cors": "^2.8.5"
   }
 }
+"type": "module",
+"scripts": {
+  "start": "node server/index.js"
+}
+
+}
