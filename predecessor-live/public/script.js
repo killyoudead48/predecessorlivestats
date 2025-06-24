@@ -1,94 +1,45 @@
 const form = document.getElementById('player-form');
-const input = document.getElementById('player-input');
+const input = document.getElementById('player-name');
 const resultDiv = document.getElementById('result');
-const chartCanvas = document.getElementById('kda-chart');
-let chartInstance = null;
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const playerName = input.value.trim();
   if (!playerName) return;
 
-  resultDiv.innerHTML = '🔍 Fetching data...';
-  if (chartInstance) {
-    chartInstance.destroy();
-  }
+  resultDiv.innerHTML = '🔍 Resolving player name...';
 
   try {
-    const idRes = await fetch(`/api/player/${playerName}`);
-    if (!idRes.ok) throw new Error(`Player lookup failed: ${idRes.status}`);
-    const { playerId } = await idRes.json();
+    // Resolve player name to ID
+    const resId = await fetch(`/api/player/${playerName}`);
+    const { playerId } = await resId.json();
 
-    const matchesRes = await fetch(`/api/player/${playerId}/history`);
-    if (!matchesRes.ok) throw new Error(`Match fetch failed: ${matchesRes.status}`);
-    const matches = await matchesRes.json();
+    resultDiv.innerHTML = '⏳ Loading match history...';
+
+    // Fetch match list
+    const resMatches = await fetch(`/api/player/${playerId}/matches`);
+    const matches = await resMatches.json();
 
     if (!Array.isArray(matches) || matches.length === 0) {
-      resultDiv.innerHTML = `<p>No match data found for this player.</p>`;
+      resultDiv.innerHTML = '⚠️ No matches found.';
       return;
     }
 
-    renderStats(matches);
-    renderChart(matches);
-  } catch (err) {
-    console.error(err);
-    resultDiv.innerHTML = `<p>❌ Error: ${err.message}</p>`;
-  }
-});
+    // Get detailed match data
+    const detailedMatches = await Promise.all(
+      matches.map(m => fetch(`/api/match/${m.id}`).then(r => r.json()))
+    );
 
-function renderStats(matches) {
-  resultDiv.innerHTML = matches.map((match, i) => {
-    const stats = match.stats;
-    return `
+    resultDiv.innerHTML = detailedMatches.map((m, i) => `
       <div class="match">
         <strong>Match ${i + 1}</strong><br>
-        Hero ID: ${match.hero_id} <br>
-        Kills: ${stats.kills} | Deaths: ${stats.deaths} | Assists: ${stats.assists}
+        Game Mode: ${m.game_mode} <br>
+        Hero ID: ${m.players[0]?.hero_id} <br>
+        Kills: ${m.players[0]?.stats.kills} | Deaths: ${m.players[0]?.stats.deaths} | Assists: ${m.players[0]?.stats.assists}
       </div>
-    `;
-  }).join('');
-}
-
-function renderChart(matches) {
-  const labels = matches.map((_, i) => `Match ${i + 1}`);
-  const kills = matches.map(m => m.stats.kills);
-  const deaths = matches.map(m => m.stats.deaths);
-  const assists = matches.map(m => m.stats.assists);
-
-  chartInstance = new Chart(chartCanvas, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Kills',
-          data: kills,
-          borderColor: 'green',
-          fill: false
-        },
-        {
-          label: 'Deaths',
-          data: deaths,
-          borderColor: 'red',
-          fill: false
-        },
-        {
-          label: 'Assists',
-          data: assists,
-          borderColor: 'blue',
-          fill: false
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { labels: { color: '#fff' } }
-      },
-      scales: {
-        x: { ticks: { color: '#ccc' } },
-        y: { ticks: { color: '#ccc' } }
-      }
-    }
-  });
-}
+    `).join('');
+  } catch (err) {
+    console.error(err);
+    resultDiv.innerHTML = `❌ Error: ${err.message}`;
+  }
+});
